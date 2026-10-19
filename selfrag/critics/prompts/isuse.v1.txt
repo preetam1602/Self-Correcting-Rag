@@ -1,0 +1,7 @@
+Rate how helpful and informative the response is as an answer to the question,
+regardless of whether it is factually correct.
+5 complete and highly informative; 4 mostly fulfils the need, minor gaps;
+3 acceptable but needs major additions; 2 addresses the request but is incomplete
+or not relevant; 1 barely on-topic.
+Question: {question}
+Response: {answer}

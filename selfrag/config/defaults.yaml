@@ -1,0 +1,56 @@
+# Deployment defaults. Precedence (highest first):
+#   environment variables > .env > SELFRAG_CONFIG_FILE (a deployment's YAML) > this file.
+# Secrets (API keys, DATABASE_URL) belong in the environment, never here.
+
+# --- Stores
+qdrant_url: http://localhost:6333
+qdrant_collection: selfrag
+
+# --- Embedding and reranker models (local)
+embedding_model: BAAI/bge-m3
+sparse_model: Qdrant/bm25
+reranker_model: BAAI/bge-reranker-v2-m3
+
+# --- Chunking (ingestion): 400-800 tokens, 10-15% overlap
+chunk_min_tokens: 400
+chunk_max_tokens: 800
+chunk_overlap_ratio: 0.12
+
+# --- Retrieval: dense + BM25 -> RRF -> reranker
+dense_top_k: 50
+sparse_top_k: 50
+rrf_k: 60
+fused_top_n: 40
+multi_query_variants: 2
+
+# --- LLMs
+critic_prob_mode: verbal          # logprobs | sample | verbal
+critic_n_samples: 5
+generator_temperature: 0.0
+llm_max_concurrency: 4
+llm_max_retries: 5
+llm_timeout_s: 60
+llm_thinking_level: minimal       # minimal | low | medium | high | null (model default)
+llm_fallback_cooldown_s: 60       # skip an overloaded model for this long, using its fallback
+llm_reasoning_headroom: 1024      # Groq: reasoning tokens count against the output budget
+
+# --- Local LLMs (llm_provider: ollama). Models are never pulled automatically.
+ollama_max_concurrency: 1         # one generation at a time keeps the CPU from saturating
+ollama_timeout_s: 300             # CPU inference is slow; local calls need a longer timeout
+ollama_num_thread: null           # null = half the logical cores
+ollama_num_ctx: 8192              # enough for K passages + prompt; larger costs RAM
+ollama_keep_alive: 5m             # unload the model after this much idle time
+
+# --- Self-RAG (paper defaults unless noted)
+passages_per_step_k: 5            # K
+retrieve_threshold_delta: 0.2     # delta; 0 = always retrieve
+force_retrieve_first: true
+beam_width_b: 2                   # B
+max_segments: 8
+segment_unit: answer              # sentence | answer (short-answer mode)
+w_is_rel: 1.0
+w_is_sup: 1.0
+w_is_use: 0.5
+hard_constraint_no_support: false
+min_rel_to_generate: 0.2
+max_query_rewrites: 1             # not in paper; safety net

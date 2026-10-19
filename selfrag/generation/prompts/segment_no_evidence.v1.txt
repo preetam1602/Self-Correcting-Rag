@@ -1,0 +1,6 @@
+Write the NEXT single sentence of the answer to the question. It must need no
+factual evidence (for example a transition or a summary of what is already written),
+or reply exactly <END> if the answer is complete.
+Question: {question}
+Answer so far: {prefix}
+Next sentence:

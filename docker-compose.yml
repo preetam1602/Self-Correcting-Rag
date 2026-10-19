@@ -1,0 +1,29 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    container_name: selfrag-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"   # REST API + web dashboard (/dashboard)
+      - "6334:6334"   # gRPC
+    environment:
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY}
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  postgres:
+    image: postgres:16.4
+    container_name: selfrag-postgres
+    restart: unless-stopped
+    ports:
+      - "5433:5432"   # 5432 is taken by a local PostgreSQL install
+    environment:
+      POSTGRES_USER: selfrag
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: selfrag
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  qdrant_data:
+  postgres_data:

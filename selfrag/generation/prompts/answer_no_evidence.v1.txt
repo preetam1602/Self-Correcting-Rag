@@ -1,0 +1,4 @@
+Answer the question in one to three sentences. Only answer if it needs no factual
+evidence (opinion, common sense, a greeting); otherwise reply exactly <END>.
+Question: {question}
+Answer:
