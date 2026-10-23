@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # CPU-only torch wheels for sentence-transformers (the default index pulls multi-GB CUDA builds)
+  PIP_EXTRA_INDEX_URL: https://download.pytorch.org/whl/cpu
+  # Required settings with no default; tests never contact these services
+  DATABASE_URL: postgresql://selfrag:ci@localhost:5432/selfrag
+  GENERATOR_MODEL: ci-generator
+  CRITIC_MODEL: ci-critic
+
+jobs:
+  unit:
+    name: Unit tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install
+        run: pip install -e ".[api,dev]"
+
+      - name: Run unit tests
+        run: pytest selfrag/tests/unit -q -rs
+
+  integration:
+    name: Integration tests (Qdrant)
+    runs-on: ubuntu-latest
+    services:
+      qdrant:
+        image: qdrant/qdrant:v1.12.4   # keep in sync with docker-compose.yml
+        ports:
+          - 6333:6333
+    env:
+      QDRANT_URL: http://localhost:6333
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: Wait for Qdrant
+        run: curl --fail --silent --retry 15 --retry-delay 2 --retry-all-errors http://localhost:6333/readyz
+
+      - name: Run integration tests
+        # These tests skip when Qdrant is unreachable; in CI a skip means a broken setup, so fail on it
+        run: |
+          pytest selfrag/tests/integration -q -rs | tee pytest.log
+          if grep -q "skipped" pytest.log; then echo "::error::Integration tests were skipped"; exit 1; fi
